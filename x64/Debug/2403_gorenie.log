@@ -1,0 +1,47 @@
+﻿  2403_gorenie.cpp
+C:\kinsol\INSTDIR\include\kinsol\kinsol.h(143,1): warning C4141: dllimport: используется несколько раз
+C:\ida\SOLVEDIR\include\sunnonlinsol\sunnonlinsol_newton.h(121,1): warning C4141: dllimport: используется несколько раз
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(426,12): warning C4244: инициализация: преобразование "double" в "int", возможна потеря данных
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(432,12): warning C4101: W: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1132,15): warning C4101: w_dot: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(998,23): warning C4101: retvalr: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1252,30): warning C4244: аргумент: преобразование "double" в "sunindextype", возможна потеря данных
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1256,23): warning C4244: аргумент: преобразование "double" в "sunindextype", возможна потеря данных
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1259,23): warning C4244: аргумент: преобразование "double" в "sunindextype", возможна потеря данных
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1286,29): warning C4244: аргумент: преобразование "double" в "sunindextype", возможна потеря данных
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1286,24): warning C4244: аргумент: преобразование "double" в "sunindextype", возможна потеря данных
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1234,16): warning C4101: mset: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1418,14): warning C4101: x1: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1422,12): warning C4101: tmp: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1421,12): warning C4101: h_left: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1418,18): warning C4101: l1: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1418,30): warning C4101: l2: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1418,34): warning C4101: L2: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1418,22): warning C4101: L1: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1421,20): warning C4101: h: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1418,26): warning C4101: x2: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1495,12): warning C4101: M: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1490,14): warning C4101: x1: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1494,12): warning C4101: tmp: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1493,12): warning C4101: h_left: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1490,18): warning C4101: l1: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1490,30): warning C4101: l2: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1490,34): warning C4101: L2: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1490,22): warning C4101: L1: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1493,20): warning C4101: h: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1490,26): warning C4101: x2: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1546,12): warning C4101: M: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1541,14): warning C4101: x1: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1545,12): warning C4101: tmp: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1544,12): warning C4101: h_left: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1541,18): warning C4101: l1: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1541,30): warning C4101: l2: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1541,34): warning C4101: L2: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1541,22): warning C4101: L1: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1544,20): warning C4101: h: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1541,26): warning C4101: x2: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1606,12): warning C4101: M: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1605,46): warning C4101: Tp_vect: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(1605,57): warning C4101: Yp_vect: неиспользованная локальная переменная
+C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie\2403_gorenie.cpp(476): warning C4715: InitialData: значение возвращается не при всех путях выполнения
+  2403_gorenie.vcxproj -> C:\kinsol\BUILDDIR\bin\Debug\2403_gorenie.exe
