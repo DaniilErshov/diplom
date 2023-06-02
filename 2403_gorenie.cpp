@@ -42,14 +42,16 @@ int cycle = 0;
 double Y_N2 = 0.745187;
 double Y_max = 1 - Y_N2;
 double P = 0.101325;
-double A = 6.85 * pow(10, 12);
+double A = 0.05 * 6.85 * pow(10, 12);
 double R = 8.314;
-double Ea = 0.8 * 46.37 * 293. ;
+double Ea = 0.9 * 46.37 * 293. ;
 double koeff_l = 0.35;
-double l = 0.5;
+double l = 0.8;
 long int myiter = 0;
 long int nniters;
 double eps_x = pow(10, -6);
+double T_start = 293.;
+double T_finish = 2515.09;
 
 typedef struct {
    realtype* x;
@@ -424,8 +426,6 @@ int InitialData(int &Nx, vector<double>& x_vect, vector<double>& T_vect, vector<
     double x_start = koeff_l * l - l / 6.;
     double x_finish = koeff_l * l + l / 6.;
     int dN = (x_finish - x_start) / h;
-    double T_start = 293.;
-    double T_finish = 2200.;
     double j = 0;
     M = 1000 * 0.000871523;
     cout << "M = " << M << "\n";
@@ -435,40 +435,29 @@ int InitialData(int &Nx, vector<double>& x_vect, vector<double>& T_vect, vector<
         x_vect[i] = h * i;
     }
 
-    for (int i = 0; i < Nx; i++) {
-        T_vect[i] = 1111.31 * tanh((x_vect[i] - koeff_l * l) / 0.038) + 1111.31 + 293.;
-    }
-
-    /*for (int i = 0; i < Nx; i++) {
-        if (x_vect[i] <= x_start)
-        {
-            T_vect[i] = T_start;
-        }
-        else if (x_vect[i] >= x_finish)
-        {
-            T_vect[i] = T_finish;
-        }
-        else {
-            T_vect[i] = T_vect[i - 1] + (T_finish - T_start) / (dN + 1);
-        }
-    }*/
-
-    T_vect[0] = 293.;
+    T_vect[0] = T_start;
     j = 0;
     for (int i = 0; i < Nx; i++) {
         if (x_vect[i] <= x_start)
         {
             Y_vect[i] = 0;
+            T_vect[i] = T_start;
         }
         else if (x_vect[i] >= x_finish)
         {
             Y_vect[i] = (1. - Y_N2);
+            T_vect[i] = T_finish;
         }
         else {
             Y_vect[i] = (1. - Y_N2) / dN * j;
+            T_vect[i] = (T_finish - T_start) / dN * j + T_start;
             j++;
         }
     }
+    /* for (int i = 0; i < Nx; i++) {
+        T_vect[i] = 1111.31 * tanh((x_vect[i] - koeff_l * l) / 0.064) + 1111.31 + 293.;
+    }*/
+
     for (int i = 0; i < Nx - 1; i++) {
         if (x_vect[i] <= koeff_l * l && x_vect[i + 1] > koeff_l * l)
             return i;
@@ -516,8 +505,40 @@ void Add_elem(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x,
         if (x[i] <= koeff_l * l && x[i + 1] > koeff_l * l)
             N_center = i;
     }
-    cout << "N_center = " << N_center << "\n";
-    cout << "T N_center = " << T[N_center] << "\n";
+    cout << "Add N_center = " << N_center << "\n";
+    cout << "Add T N_center = " << T[N_center] << "\n";
+}
+
+void Del_elem(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x, int& N_center, double b)
+{
+    int j_t = 1;
+    double T_max = 0, T_min = T[0];
+
+    for (int i = 0; i < N_x; i++)
+    {
+        if (T[i] > T_max) T_max = T[i];
+        if (T[i] < T_min) T_min = T[i];
+    }
+
+    while (j_t < N_x - 2)
+    {
+        if (fabs(T[j_t] - T[j_t - 1]) < b * (T_max - T_min))
+        {
+            T.erase(T.begin() + j_t);
+            Y.erase(Y.begin() + j_t);
+            x.erase(x.begin() + j_t);
+            N_x--;
+        }
+        j_t++;
+        //cout << "j_t = " << j_t << "\n";
+    }
+
+    for (int i = 0; i < N_x - 1; i++) {
+        if (x[i] <= koeff_l * l && x[i + 1] > koeff_l * l)
+            N_center = i;
+    }
+    cout << "Del N_center = " << N_center << "\n";
+    cout << "Del T N_center = " << T[N_center] << "\n";
 }
 
 void Add_elem2(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x, int& N_center, double b)
@@ -585,13 +606,15 @@ double F_right(double T_left, double T_center, double T_right, double M, double 
     cout << "dT/dx = " << dTdx << "\n";
     cout << "M = " << M << "\n";*/
     //cout << "h = " << (get_Hi(6, 298) - get_Hi(0, 298) - 0.5 * get_Hi(2, 298)) * pow(10, 3) << "\n";
+    double q = (get_Hi(6, T_center) - get_Hi(0, T_center) - 0.5 * get_Hi(2, T_center)) * pow(10, 3);
+    //cout << "T = " << T_center << "  q = " << q << "\n";
+    q = (get_Hi(6, T_start) - get_Hi(0, T_start) - 0.5 * get_Hi(2, T_start)) * pow(10, 3) * 0.8;
+    //cout << "q = " << q << "\n";
     return -(2. / (h + h_left)) *
         (Lambda((T_right + T_center) / 2., Y_H2O) * (T_right - T_center) / h
             - Lambda((T_center + T_left) / 2., Y_H2O) * (T_center - T_left) / h_left)
         + Cp * M * dTdx
-        + w_dot * get_Hi(6, T_center) * pow(10, 3)
-        - w_dot * get_Hi(0, T_center) * pow(10, 3)
-        - 0.5 * w_dot * get_Hi(2, T_center) * pow(10, 3);
+        + w_dot * q;
     /*return -(2. / (h + h_left)) *
         (Lambda((T_right + T_center) / 2., Y_H2O) * (T_right - T_center) / h
             - Lambda((T_center + T_left) / 2., Y_H2O) * (T_center - T_left) / h_left)
@@ -655,11 +678,9 @@ double F_rightY(double T_left, double T_center, double T_right, double M, double
     double K = 1 - Y_N2;
     double Y = 1 - Y_H2O_center / K;
     double w_dot = K * A * rho * rho * Y * exp(-Ea / T_center);
-   /* cout << "M = " << M * (h_left / h / (h + h_left) * Y_H2O_right + (h - h_left) / h / h_left * Y_H2O_center
+    /*cout << "M = " << M * (h_left / h / (h + h_left) * Y_H2O_right + (h - h_left) / h / h_left * Y_H2O_center
        - h / h_left / (h + h_left) * Y_H2O_left) << "\n";
-    cout << "wdot = " << w_dot << "\n";
-    cout << "diffusion = " << (rhoYkVk_H2O(Y_H2O_center, Y_H2O_right, T_center, T_right, x_cells, i) - rhoYkVk_H2O(Y_H2O_left, Y_H2O_center, T_left, T_center, x_cells, i - 1))
-        / ((x_cells[i + 1] - x_cells[i - 1]) / 2.) << "\n";*/
+    cout << "wdot = " << w_dot << "\n";*/
     return M * (h_left / h / (h + h_left) * Y_H2O_right + (h - h_left) / h / h_left * Y_H2O_center - h / h_left / (h + h_left) * Y_H2O_left) - w_dot;
 }
 
@@ -768,7 +789,7 @@ int Integrate(int N_x, vector<double>& x_vect, vector<double>& T_vect, vector<do
     Ith(res_vect, NEQ_T) = M;
     data->N_m = NEQ_T - 1;
     for (int i = NEQ_T + 1; i <= NEQ; i++) {
-        Ith(c, i) = 1.0;   /* constraint on x1 */
+        Ith(c, i) = 0.0;   /* constraint on x1 */
         Ith(s, i) = 2500. / 0.25;
         Ith(res_vect, i) = Y_vect[i - NEQ_T];
         //cout << "Yvect " << i - NEQ_T << " =  " << Y_vect[i - NEQ_T] - Y_max << endl;
@@ -908,7 +929,7 @@ int Integrate_Y(int N_x, vector<double>& x_vect, vector<double>& T_vect, vector<
     data->N_m = 1 - 1;
 
     for (int i = 2; i <= NEQ; i++) {
-        Ith(c, i) = ONE;   /* no constraint on x1 */
+        Ith(c, i) = 0;   /* no constraint on x1 */
         Ith(res_vect, i) = Y_vect[i - 1];
         //cout << "Yvect " << i - N_x + 1 << " =  " << Y_vect[i - N_x + 1] << endl;
     }
@@ -989,12 +1010,12 @@ int Integrate_Y(int N_x, vector<double>& x_vect, vector<double>& T_vect, vector<
     return 0;
 }
 
-int Integrate_IDA(int N_x, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center)
+int Integrate_IDA(int N_x, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center , double tout1, int call, int number)
 {
     void* mem;
     N_Vector yy, yp, avtol;
     realtype rtol, * yval, * ypval, * atval;
-    realtype t0, tout1, tout, tret;
+    realtype t0, tout, tret;
     int iout, retval, retvalr;
     SUNMatrix A;
     SUNLinearSolver LS;
@@ -1051,7 +1072,6 @@ int Integrate_IDA(int N_x, vector<double>& x_vect, vector<double>& T_vect, vecto
     atval = N_VGetArrayPointer(avtol);
     /* Integration limits */
     t0 = ZERO;
-    tout1 = pow(10, -6);
 
     j = 1;
     //cout << NEQ << " = " << Ith(res_vect, NEQ + 1) << endl;
@@ -1102,7 +1122,6 @@ int Integrate_IDA(int N_x, vector<double>& x_vect, vector<double>& T_vect, vecto
     retval = IDASetUserData(mem, data);
     if (check_retval(&retval, "IDASetUserData", 1)) return(1);
     retval = IDASetMaxNumSteps(mem, 20000);
-
     /* Create dense SUNMatrix for use in linear solves */
     A = SUNDenseMatrix(NEQ, NEQ, ctx);
     if (check_retval((void*)A, "SUNDenseMatrix", 0)) return(1);
@@ -1130,12 +1149,10 @@ int Integrate_IDA(int N_x, vector<double>& x_vect, vector<double>& T_vect, vecto
     ofstream fout;
     double Y_H2, Y_O2;
     double W, w_dot, rho;
-    while (iout  < 10) {
+    while (iout  < 13000) {
         retval = IDASolve(mem, tout, &tret, yy, yp, IDA_NORMAL);
         ExportToArray(T_vect, Y_vect, M, data, yy, N_x);
         //PrintOutput(mem, tret, yy);
-        cout << "t = " << tout << "\n";
-        cout << "M = " << M << "\n";
         j = 1;
         for (int i = 1; i < NEQ_T; i++) {
             if (j == N_center) j++;
@@ -1148,24 +1165,31 @@ int Integrate_IDA(int N_x, vector<double>& x_vect, vector<double>& T_vect, vecto
             j = i - NEQ_T;
             //cout << "Ithyp " << i - 1 << " = " << -F_right(T_vect[j - 1], T_vect[j], T_vect[j + 1], data->M, Y_vect[j], Y_vect[j + 1], data->x, j) << "\n";
         }
-        fout.open("file" + to_string(tout * pow(10, 8)) + ".dat");
-        fout << "TITLE=\"" << "Graphics" << "\"" << endl;
-        fout << R"(VARIABLES= "x", "T", "Y fr", "rho")" << endl;
-        for (int i = 0; i < N_x; i++) {
-            get_Y(Y_vect[i], Y_H2, Y_O2, Y_N2);
-            W = get_W(Y_vect[i], Y_H2, Y_O2, Y_N2);
-            rho = P * W / phyc.kR / T_vect[i] * pow(10, -3);
-            double K = 1. - Y_N2;
-            double Y = 1. - Y_vect[i] / K;
-            fout << x_vect[i] << "  " << T_vect[i] << " " << Y_vect[i] << " " << rho << endl;
+        if ((iout + 1) % number == 0)
+        {
+            cout << "t = " << tout << "\n";
+            cout << "M = " << M << "\n";
+            fout.open(to_string(call) + "file" + to_string(int(tout * pow(10, 7))) + ".dat");
+            fout << "TITLE=\"" << "Graphics" << "\"" << endl;
+            fout << R"(VARIABLES= "x", "T", "Y fr", "rho")" << endl;
+            for (int i = 0; i < N_x; i++) {
+                get_Y(Y_vect[i], Y_H2, Y_O2, Y_N2);
+                W = get_W(Y_vect[i], Y_H2, Y_O2, Y_N2);
+                rho = P * W / phyc.kR / T_vect[i] * pow(10, -3);
+                double K = 1. - Y_N2;
+                double Y = 1. - Y_vect[i] / K;
+                fout << x_vect[i] << "  " << T_vect[i] << " " << Y_vect[i] << " " << rho << endl;
+            }
+            fout.close();
         }
-        fout.close();
         if (check_retval(&retval, "IDASolve", 1)) return(1);
 
-        if (retval == IDA_SUCCESS) {
-            iout++;
-            tout += tout1;
-        }
+        //if (retval == IDA_SUCCESS) {
+        //    iout++;
+        //    tout += tout1;
+        //}
+        iout++;
+        tout += tout1;
     }
 
     /* Print final statistics to the screen */
@@ -1318,10 +1342,52 @@ double T_find()
     return 0;
 }
 
+void SetParametres1()
+{
+    A =  6.85 * pow(10, 12);
+    Ea = 46.37 * 293.;
+    l = 0.4;
+    koeff_l = 0.4;
+}
+
+
+void Add_elem_spec(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x, int& N_center, double b)
+{
+    int j_t = 1;
+    double T_max = 0, T_min = T[0];
+
+    for (int i = 0; i < N_x; i++)
+    {
+        if (T[i] > T_max) T_max = T[i];
+        if (T[i] < T_min) T_min = T[i];
+    }
+
+    while (j_t < N_x - 2)
+    {
+        if (fabs(T[j_t] - T[j_t - 1]) > b * (T_max - T_min))
+        {
+            T.insert(T.begin() + j_t, (T[j_t] + T[j_t - 1]) / 2.);
+            Y.insert(Y.begin() + j_t, (Y[j_t] + Y[j_t - 1]) / 2.);
+            x.insert(x.begin() + j_t, (x[j_t] + x[j_t - 1]) / 2.);
+            N_x++;
+            j_t++;
+        }
+        j_t++;
+        //cout << "j_t = " << j_t << "\n";
+    }
+
+    for (int i = 0; i < N_x - 1; i++) {
+        if (x[i] <= koeff_l * l && x[i + 1] > koeff_l * l)
+            N_center = i;
+    }
+    cout << "Add N_center = " << N_center << "\n";
+    cout << "Add T N_center = " << T[N_center] << "\n";
+}
+
 int main()
 {
     init_consts(num_gas_species, num_react);
-    int N_x = 100;
+    int N_x = 150;
     double b = 0.01;
     double M;
     double W, rho, Y_H2, Y_O2;
@@ -1333,69 +1399,112 @@ int main()
     vector<double> Y_vect(N_x);
     double* my_x;
     ofstream fout;
-    N_center = InitialData(N_x, x_vect, T_vect, Y_vect, M);
-    cout << "N_center = " << N_center << "\n";
-    //T_find();
-    //cout << "endT\n";
-    Add_elem(T_vect, Y_vect, x_vect, N_x, N_center, b);
+    double tout1 = pow(10, -7);
+    int number = 100;
+    {
+
+
+        N_center = InitialData(N_x, x_vect, T_vect, Y_vect, M);
+        cout << "N_center = " << N_center << "\n";
+        //T_find();
+        //cout << "endT\n";
+        Add_elem(T_vect, Y_vect, x_vect, N_x, N_center, b);
+        cout << "N_x = " << N_x << "\n";
+        cout << "N_center = " << N_center << "\n";
+        my_x = new double[N_x];
+        for (int i = 0; i < N_x; i++) {
+            my_x[i] = x_vect[i];
+        }
+        cout << "F = " << F_right(T_vect[N_center - 1], T_vect[N_center], T_vect[N_center + 1], M, Y_vect[N_center], Y_vect[N_center + 1], my_x, N_center) << "\n";
+
+
+        retval = Integrate_Y(N_x, x_vect, T_vect, Y_vect, M, N_center, 0);
+        fout.open("fileY1.dat");
+        fout << "TITLE=\"" << "Graphics" << "\"" << endl;
+        fout << R"(VARIABLES= "x", "T1", "Y fr1", "rho1", "wdot1")" << endl;
+        for (int i = 0; i < N_x; i++) {
+            get_Y(Y_vect[i], Y_H2, Y_O2, Y_N2);
+            W = get_W(Y_vect[i], Y_H2, Y_O2, Y_N2);
+            rho = P * W / phyc.kR / T_vect[i] * pow(10, -3);
+            double K = 1. - Y_N2;
+            double Y = 1. - Y_vect[i] / K;
+            w_dot = K * A * rho * rho * Y * exp(-Ea / T_vect[i]);
+            fout << x_vect[i] << "  " << T_vect[i] << " " << Y_vect[i] << " " << rho << " " << w_dot << endl;
+        }
+        fout.close();
+
+        retval = Integrate_IDA(N_x, x_vect, T_vect, Y_vect, M, N_center, tout1, 1, number);
+        cout << "end IDA" << "\n";
+        retval = Integrate(N_x, x_vect, T_vect, Y_vect, M, N_center);
+        fout.open("fileALLINT2.dat");
+        fout << "TITLE=\"" << "Graphics" << "\"" << endl;
+        fout << R"(VARIABLES= "x", "T2", "Y fr2", "rho2", "Cp", "gamma")" << endl;
+        for (int i = 0; i < N_x; i++) {
+            get_Y(Y_vect[i], Y_H2, Y_O2, Y_N2);
+            W = get_W(Y_vect[i], Y_H2, Y_O2, Y_N2);
+            rho = P * W / phyc.kR / T_vect[i] * pow(10, -3);
+            double K = 1. - Y_N2;
+            double Y = 1. - Y_vect[i] / K;
+            w_dot = K * A * rho * rho * Y * exp(-Ea / T_vect[i]);
+            fout << x_vect[i] << "  " << T_vect[i] << " " << Y_vect[i] << " " << rho << " " << Cp_all(T_vect[i], Y_vect[i]) * pow(10, 3) << " " << Cp_all(T_vect[i], Y_vect[i]) / Cv_all(T_vect[i], Y_vect[i]) << endl;
+        }
+        fout.close();
+        cout << "M_first_block = " << M << endl;
+        int j = 0;
+        cout << "v = " << M / 0.000871523 << "\n";
+    }
+
+    SetParametres1();
+    vector<double> x_vect_new;
+    vector<double> T_vect_new;
+    vector<double> Y_vect_new;
+    for (int i = 0; i < N_x; i++)
+    {
+        if (x_vect[i] > 0.1 and x_vect[i] < 0.5)
+        {
+            x_vect_new.push_back(x_vect[i] - 0.1);
+            T_vect_new.push_back(T_vect[i]);
+            Y_vect_new.push_back(Y_vect[i]);
+        }
+    }    
+    N_x = x_vect_new.size();
     cout << "N_x = " << N_x << "\n";
+    for (int i = 0; i < N_x; i++) {
+        if (x_vect_new[i] <= koeff_l * l && x_vect_new[i + 1] > koeff_l * l)
+            N_center = i;
+    }
+    b = 0.01;
+    cout << "T center = " << T_vect_new[N_center] << "\n";
+    Add_elem(T_vect_new, Y_vect_new, x_vect_new, N_x, N_center, b);
+    Add_elem_spec(T_vect_new, Y_vect_new, x_vect_new, N_x, N_center, b);
+    Del_elem(T_vect_new, Y_vect_new, x_vect_new, N_x, N_center, b);
+    fout.open("fileINITIALNEW.dat");
+    fout << "TITLE=\"" << "Graphics" << "\"" << endl;
+    fout << R"(VARIABLES= "x", "T2", "Y fr2")" << endl;
+    for (int i = 0; i < N_x; i++) {
+        fout << x_vect_new[i] << "  " << T_vect_new[i] << " " << Y_vect_new[i] << endl;
+    }
+    fout.close();
     cout << "N_center = " << N_center << "\n";
-    my_x = new double[N_x];
-    for (int i = 0; i < N_x; i++) {
-        my_x[i] = x_vect[i];
-    }
-    cout << "F = " << F_right(T_vect[N_center - 1], T_vect[N_center], T_vect[N_center + 1], M, Y_vect[N_center], Y_vect[N_center + 1], my_x, N_center) << "\n";
+    cout << "N_x = " << N_x << "\n";
+    cout << "T center = " << T_vect_new[N_center] << "\n";
 
-
-    retval = Integrate_Y(N_x, x_vect, T_vect, Y_vect, M, N_center, 0);
-    fout.open("fileY1_" + to_string(N_x) + ".dat");
+    tout1 =  5 * pow(10, -9);
+    retval = Integrate_Y(N_x, x_vect_new, T_vect_new, Y_vect_new, M, N_center, 0);
+    cout << "Start IDA\n";
+    number = 150;
+    retval = Integrate_IDA(N_x, x_vect_new, T_vect_new, Y_vect_new, M, N_center, tout1, 2, number);
+    cout << "End IDA\n";
+    retval = Integrate(N_x, x_vect_new, T_vect_new, Y_vect_new, M, N_center);
+    fout.open("file_part2.dat");
     fout << "TITLE=\"" << "Graphics" << "\"" << endl;
-    fout << R"(VARIABLES= "x", "T1", "Y fr1", "rho1", "wdot1")" << endl;
+    fout << R"(VARIABLES= "x", "T2", "Y fr2")" << endl;
     for (int i = 0; i < N_x; i++) {
-        get_Y(Y_vect[i], Y_H2, Y_O2, Y_N2);
-        W = get_W(Y_vect[i], Y_H2, Y_O2, Y_N2);
-        rho = P * W / phyc.kR / T_vect[i] * pow(10, -3);
-        double K = 1. - Y_N2;
-        double Y = 1. - Y_vect[i] / K;
-        w_dot = K * A * rho * rho * Y * exp(-Ea / T_vect[i]);
-        fout << x_vect[i] << "  " << T_vect[i] << " " << Y_vect[i] << " " << rho << " " << w_dot << endl;
+        fout << x_vect_new[i] << "  " << T_vect_new[i] << " " << Y_vect_new[i] << endl;
     }
     fout.close();
-
-
-    //retval = Integrate_Y(N_x, x_vect, T_vect, Y_vect, M, N_center, 1);
-    retval = Integrate_IDA(N_x, x_vect, T_vect, Y_vect, M, N_center);
-    fout.open("fileY2_" + to_string(N_x) + ".dat");
-    fout << "TITLE=\"" << "Graphics" << "\"" << endl;
-    fout << R"(VARIABLES= "x", "T2", "Y fr2", "rho2", "Cp", "gamma")" << endl;
-    for (int i = 0; i < N_x; i++) {
-        get_Y(Y_vect[i], Y_H2, Y_O2, Y_N2);
-        W = get_W(Y_vect[i], Y_H2, Y_O2, Y_N2);
-        rho = P * W / phyc.kR / T_vect[i] * pow(10, -3);
-        double K = 1. - Y_N2;
-        double Y = 1. - Y_vect[i] / K;
-        w_dot = K * A * rho * rho * Y * exp(-Ea / T_vect[i]);
-        fout << x_vect[i] << "  " << T_vect[i] << " " << Y_vect[i] << " " << rho << " " << Cp_all(T_vect[i], Y_vect[i]) * pow(10, 3) << " " << Cp_all(T_vect[i], Y_vect[i])  / Cv_all(T_vect[i], Y_vect[i]) << endl;
-    }
-    fout.close();
-    cout << "MY = " << M << endl;
-
-
-    //retval = Integrate(N_x, x_vect, T_vect, Y_vect, M, N_center);
-    //cout << "MT = " << M << endl;
-    //fout.open("fileTY" + to_string(N_x) + ".dat");
-    //fout << "TITLE=\"" << "Graphics" << "\"" << endl;
-    //fout << R"(VARIABLES= "x", "T2", "Y fr2", "rho2", "wdot")" << endl;
-    //for (int i = 0; i < N_x; i++) {
-    //    get_Y(Y_vect[i], Y_H2, Y_O2, Y_N2);
-    //    W = get_W(Y_vect[i], Y_H2, Y_O2, Y_N2);
-    //    rho = P * W / phyc.kR / T_vect[i] * pow(10, -3);
-    //    double K = 1. - Y_N2;
-    //    double Y = 1. - Y_vect[i] / K;
-    //    w_dot = K * A * rho * rho * Y * exp(-Ea / T_vect[i]);
-    //    fout << x_vect[i] << "  " << T_vect[i] << " " << Y_vect[i] << " " << rho << " " << w_dot << endl;
-    //}
-    //fout.close();
+    cout << "M_second_block = " << M << endl;
+    cout << "v = " << M / 0.000871523 << "\n";
     delete[] my_x;
     return 0;
     //T_find();
