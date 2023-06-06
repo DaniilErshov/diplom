@@ -608,7 +608,7 @@ double F_right(double T_left, double T_center, double T_right, double M, double 
     //cout << "h = " << (get_Hi(6, 298) - get_Hi(0, 298) - 0.5 * get_Hi(2, 298)) * pow(10, 3) << "\n";
     double q = (get_Hi(6, T_center) - get_Hi(0, T_center) - 0.5 * get_Hi(2, T_center)) * pow(10, 3);
     //cout << "T = " << T_center << "  q = " << q << "\n";
-    q = (get_Hi(6, T_start) - get_Hi(0, T_start) - 0.5 * get_Hi(2, T_start)) * pow(10, 3) * 0.8;
+    q = (get_Hi(6, T_start) - get_Hi(0, T_start) - 0.5 * get_Hi(2, T_start)) * pow(10, 3);
     //cout << "q = " << q << "\n";
     return -(2. / (h + h_left)) *
         (Lambda((T_right + T_center) / 2., Y_H2O) * (T_right - T_center) / h
@@ -809,7 +809,7 @@ int Integrate(int N_x, vector<double>& x_vect, vector<double>& T_vect, vector<do
     retval = KINSetScaledStepTol(kmem, scsteptol);
     if (check_retval(&retval, "KINSetScaledStepTol", 1)) return(1);
     retval = KINSetMaxSetupCalls(kmem, 1);
-
+    retval = KINSetNumMaxIters(kmem, 2000);
     retval = KINInit(kmem, func, res_vect);
     if (check_retval(&retval, "KINInit", 1)) return(1);
 
@@ -929,7 +929,7 @@ int Integrate_Y(int N_x, vector<double>& x_vect, vector<double>& T_vect, vector<
     data->N_m = 1 - 1;
 
     for (int i = 2; i <= NEQ; i++) {
-        Ith(c, i) = 0;   /* no constraint on x1 */
+        Ith(c, i) = 0.0;   /* no constraint on x1 */
         Ith(res_vect, i) = Y_vect[i - 1];
         //cout << "Yvect " << i - N_x + 1 << " =  " << Y_vect[i - N_x + 1] << endl;
     }
@@ -1010,10 +1010,10 @@ int Integrate_Y(int N_x, vector<double>& x_vect, vector<double>& T_vect, vector<
     return 0;
 }
 
-int Integrate_IDA(int N_x, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center , double tout1, int call, int number)
+int Integrate_IDA(int N_x, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center , double tout1, int call, int number, int print_value, int cons_flag)
 {
     void* mem;
-    N_Vector yy, yp, avtol;
+    N_Vector yy, yp, avtol, cons;
     realtype rtol, * yval, * ypval, * atval;
     realtype t0, tout, tret;
     int iout, retval, retvalr;
@@ -1048,7 +1048,7 @@ int Integrate_IDA(int N_x, vector<double>& x_vect, vector<double>& T_vect, vecto
     }
 
     mem = NULL;
-    yy = yp = avtol = NULL;
+    cons = yy = yp = avtol = NULL;
     yval = ypval = atval = NULL;
     A = NULL;
     LS = NULL;
@@ -1064,6 +1064,8 @@ int Integrate_IDA(int N_x, vector<double>& x_vect, vector<double>& T_vect, vecto
     if (check_retval((void*)yp, "N_VNew_Serial", 0)) return(1);
     avtol = N_VClone(yy);
     if (check_retval((void*)avtol, "N_VNew_Serial", 0)) return(1);
+    cons = N_VClone(yy);
+    if (check_retval((void*)cons, "N_VNew_Serial", 0)) return(1);
 
     /* Create and initialize  y, y', and absolute tolerance vectors. */
     yval = N_VGetArrayPointer(yy);
@@ -1118,7 +1120,20 @@ int Integrate_IDA(int N_x, vector<double>& x_vect, vector<double>& T_vect, vecto
 
     retval = IDASVtolerances(mem, rtol, avtol);
     if (check_retval(&retval, "IDASVtolerances", 1)) return(1);
+    if (cons_flag == 1)
+    {
+        j = 1;
+        for (int i = 1; i < NEQ_T; i++) {
+            Ith(cons, i) = 0;
 
+        }
+        Ith(cons, NEQ_T) = 0;
+        for (int i = NEQ_T + 1; i <= NEQ; i++) {
+            Ith(cons, i) = 1;
+        }
+        retval = IDASetConstraints(mem, cons);
+
+    }
     retval = IDASetUserData(mem, data);
     if (check_retval(&retval, "IDASetUserData", 1)) return(1);
     retval = IDASetMaxNumSteps(mem, 20000);
@@ -1149,7 +1164,7 @@ int Integrate_IDA(int N_x, vector<double>& x_vect, vector<double>& T_vect, vecto
     ofstream fout;
     double Y_H2, Y_O2;
     double W, w_dot, rho;
-    while (iout  < 13000) {
+    while (iout  < print_value) {
         retval = IDASolve(mem, tout, &tret, yy, yp, IDA_NORMAL);
         ExportToArray(T_vect, Y_vect, M, data, yy, N_x);
         //PrintOutput(mem, tret, yy);
@@ -1212,6 +1227,7 @@ int Integrate_IDA(int N_x, vector<double>& x_vect, vector<double>& T_vect, vecto
     N_VDestroy(avtol);
     N_VDestroy(yy);
     N_VDestroy(yp);
+    N_VDestroy(cons);
     SUNContext_Free(&ctx);
 
     return(retval);
@@ -1347,7 +1363,7 @@ void SetParametres1()
     A =  6.85 * pow(10, 12);
     Ea = 46.37 * 293.;
     l = 0.4;
-    koeff_l = 0.4;
+    koeff_l = 0.42;
 }
 
 
@@ -1355,7 +1371,7 @@ void Add_elem_spec(vector<double>& T, vector<double>& Y, vector<double>& x, int&
 {
     int j_t = 1;
     double T_max = 0, T_min = T[0];
-
+    double Y_max = 0, Y_min = Y[N_x - 1];
     for (int i = 0; i < N_x; i++)
     {
         if (T[i] > T_max) T_max = T[i];
@@ -1376,6 +1392,26 @@ void Add_elem_spec(vector<double>& T, vector<double>& Y, vector<double>& x, int&
         //cout << "j_t = " << j_t << "\n";
     }
 
+    j_t = 1;
+    for (int i = 0; i < N_x; i++)
+    {
+        if (Y[i] > Y_max) Y_max = Y[i];
+        if (Y[i] < Y_min) Y_min = Y[i];
+    }
+
+    while (j_t < N_x - 2)
+    {
+        if (fabs(Y[j_t] - Y[j_t - 1]) > b * (Y_max - Y_min))
+        {
+            T.insert(T.begin() + j_t, (T[j_t] + T[j_t - 1]) / 2.);
+            Y.insert(Y.begin() + j_t, (Y[j_t] + Y[j_t - 1]) / 2.);
+            x.insert(x.begin() + j_t, (x[j_t] + x[j_t - 1]) / 2.);
+            N_x++;
+            j_t++;
+        }
+        j_t++;
+        //cout << "j_t = " << j_t << "\n";
+    }
     for (int i = 0; i < N_x - 1; i++) {
         if (x[i] <= koeff_l * l && x[i + 1] > koeff_l * l)
             N_center = i;
@@ -1401,9 +1437,9 @@ int main()
     ofstream fout;
     double tout1 = pow(10, -7);
     int number = 100;
+    int print_value = 13000;
+    int cons_flag = 0;
     {
-
-
         N_center = InitialData(N_x, x_vect, T_vect, Y_vect, M);
         cout << "N_center = " << N_center << "\n";
         //T_find();
@@ -1433,7 +1469,7 @@ int main()
         }
         fout.close();
 
-        retval = Integrate_IDA(N_x, x_vect, T_vect, Y_vect, M, N_center, tout1, 1, number);
+        retval = Integrate_IDA(N_x, x_vect, T_vect, Y_vect, M, N_center, tout1, 1, number, print_value, 0);
         cout << "end IDA" << "\n";
         retval = Integrate(N_x, x_vect, T_vect, Y_vect, M, N_center);
         fout.open("fileALLINT2.dat");
@@ -1464,7 +1500,8 @@ int main()
         {
             x_vect_new.push_back(x_vect[i] - 0.1);
             T_vect_new.push_back(T_vect[i]);
-            Y_vect_new.push_back(Y_vect[i]);
+            if (Y_vect[i] < 0.0) Y_vect_new.push_back(0.0);
+            else Y_vect_new.push_back(Y_vect[i]);
         }
     }    
     N_x = x_vect_new.size();
@@ -1477,7 +1514,14 @@ int main()
     cout << "T center = " << T_vect_new[N_center] << "\n";
     Add_elem(T_vect_new, Y_vect_new, x_vect_new, N_x, N_center, b);
     Add_elem_spec(T_vect_new, Y_vect_new, x_vect_new, N_x, N_center, b);
+    Add_elem_spec(T_vect_new, Y_vect_new, x_vect_new, N_x, N_center, b);
+    b = 0.005;
+    Add_elem_spec(T_vect_new, Y_vect_new, x_vect_new, N_x, N_center, b);
+    Add_elem_spec(T_vect_new, Y_vect_new, x_vect_new, N_x, N_center, b);
+    Add_elem_spec(T_vect_new, Y_vect_new, x_vect_new, N_x, N_center, b);
     Del_elem(T_vect_new, Y_vect_new, x_vect_new, N_x, N_center, b);
+    cout << "h = " << x_vect_new[N_center + 7] - x_vect_new[N_center + 6] << "\n";
+    cout << "Nx = " << N_x << "\n";
     fout.open("fileINITIALNEW.dat");
     fout << "TITLE=\"" << "Graphics" << "\"" << endl;
     fout << R"(VARIABLES= "x", "T2", "Y fr2")" << endl;
@@ -1489,11 +1533,13 @@ int main()
     cout << "N_x = " << N_x << "\n";
     cout << "T center = " << T_vect_new[N_center] << "\n";
 
-    tout1 =  5 * pow(10, -9);
+    tout1 =  pow(10, -7);
     retval = Integrate_Y(N_x, x_vect_new, T_vect_new, Y_vect_new, M, N_center, 0);
+
     cout << "Start IDA\n";
-    number = 150;
-    retval = Integrate_IDA(N_x, x_vect_new, T_vect_new, Y_vect_new, M, N_center, tout1, 2, number);
+    number = 1000;
+    print_value = 18000;
+    retval = Integrate_IDA(N_x, x_vect_new, T_vect_new, Y_vect_new, M, N_center, tout1, 2, number, print_value, 0);
     cout << "End IDA\n";
     retval = Integrate(N_x, x_vect_new, T_vect_new, Y_vect_new, M, N_center);
     fout.open("file_part2.dat");
@@ -1503,8 +1549,75 @@ int main()
         fout << x_vect_new[i] << "  " << T_vect_new[i] << " " << Y_vect_new[i] << endl;
     }
     fout.close();
+
+    double dTdx = 0;
+    double h_left = 0;
+    double h = 0;
+    double maxdTdx = 0;
     cout << "M_second_block = " << M << endl;
     cout << "v = " << M / 0.000871523 << "\n";
+    b = 0.005;
+    cout << "T center = " << T_vect_new[N_center] << "\n";
+    Add_elem_spec(T_vect_new, Y_vect_new, x_vect_new, N_x, N_center, b);
+    //Add_elem_spec(T_vect_new, Y_vect_new, x_vect_new, N_x, N_center, b);
+    cout << "N_X = " << N_x << "\n";
+    retval = Integrate(N_x, x_vect_new, T_vect_new, Y_vect_new, M, N_center);
+    fout.open("file_part3.dat");
+    fout << "TITLE=\"" << "Graphics" << "\"" << endl;
+    fout << R"(VARIABLES= "x", "T3", "Y fr3")" << endl;
+    for (int i = 0; i < N_x; i++) {
+        fout << x_vect_new[i] << "  " << T_vect_new[i] << " " << Y_vect_new[i] << endl;
+    }
+    cout << "M_third_block = " << M << endl;
+    cout << "v = " << M / 0.000871523 << "\n";
+    fout.close();
+
+    for (int i = 1; i < N_x - 1; i++)
+    {
+        h_left = x_vect_new[i] - x_vect_new[i - 1];
+        h = x_vect_new[i + 1] - x_vect_new[i];
+        dTdx = (h_left / h / (h + h_left) * T_vect_new[i + 1] + (h - h_left) / h / h_left * T_vect_new[i] - h / h_left / (h + h_left) * T_vect_new[i - 1]);
+        if (dTdx > maxdTdx) maxdTdx = dTdx;
+    }
+
+    cout << "xf = " << (T_vect_new[N_x - 1] - T_vect_new[0]) / maxdTdx << "\n";
+    fout.open("file_h.dat");
+    fout << "TITLE=\"" << "Graphics" << "\"" << endl;
+    fout << R"(VARIABLES= "x", "h")" << endl;
+    for (int i = 0; i < N_x - 1; i++) {
+        fout << x_vect_new[i] << "  " << x_vect_new[i + 1] - x_vect_new[i] << endl;
+    }
+    cout << "M_third_block = " << M << endl;
+    cout << "v = " << M / 0.000871523 << "\n";
+    fout.close();
+
+
+    //b = 0.002;
+    //cout << "T center = " << T_vect_new[N_center] << "\n";
+    //Add_elem_spec(T_vect_new, Y_vect_new, x_vect_new, N_x, N_center, b);
+    //cout << "4_bloc N_x = " << N_x << "\n";
+    //retval = Integrate_Y(N_x, x_vect_new, T_vect_new, Y_vect_new, M, N_center, 0);
+    //number = 1000;
+    //print_value = 18000;
+    ////retval = Integrate_IDA(N_x, x_vect_new, T_vect_new, Y_vect_new, M, N_center, tout1, 3, number, print_value, 0);
+    ////cout << "End IDA\n";
+    //retval = Integrate(N_x, x_vect_new, T_vect_new, Y_vect_new, M, N_center);
+    //fout.open("file_part4.dat");
+    //fout << "TITLE=\"" << "Graphics" << "\"" << endl;
+    //fout << R"(VARIABLES= "x", "T4", "Y fr4")" << endl;
+    //for (int i = 0; i < N_x; i++) {
+    //    fout << x_vect_new[i] << "  " << T_vect_new[i] << " " << Y_vect_new[i] << endl;
+    //}
+    //fout.close();
+    //cout << "M_4_block = " << M << endl;
+    //cout << "v = " << M / 0.000871523 << "\n";
+    //fout.open("file_h4.dat");
+    //fout << "TITLE=\"" << "Graphics" << "\"" << endl;
+    //fout << R"(VARIABLES= "x", "h")" << endl;
+    //for (int i = 0; i < N_x - 1; i++) {
+    //    fout << x_vect_new[i] << "  " << x_vect_new[i + 1] - x_vect_new[i] << endl;
+    //}
+    //fout.close();
     delete[] my_x;
     return 0;
     //T_find();
